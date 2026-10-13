@@ -14,8 +14,7 @@
 	<img
 		src={data.wallpaper.url}
 		alt=""
-		title={data.wallpaper.copyright}
-		class="fixed inset-0 -z-10 h-full w-full object-cover"
+		class="fixed inset-0 -z-10 h-full w-full object-cover brightness-75"
 	/>
 {/if}
 
