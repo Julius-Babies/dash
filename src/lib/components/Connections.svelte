@@ -13,9 +13,11 @@
 		/** Journeys with an alarm set, keyed by id. */
 		alarms: ReadonlyMap<string, Journey>;
 		ontoggle: (journey: Journey) => void;
+		/** Minutes before departure at which an alarm goes off. */
+		alarmLead: number;
 	};
 
-	let { from, to, journeys, now, alarms, ontoggle }: Props = $props();
+	let { from, to, journeys, now, alarms, ontoggle, alarmLead }: Props = $props();
 
 	const timeFormat = new Intl.DateTimeFormat('de-DE', {
 		hour: '2-digit',
@@ -33,7 +35,12 @@
 </script>
 
 <section class="panel">
-	<h2 class="panel-title">{from} → {to}</h2>
+	<header class="panel-title flex items-baseline justify-between gap-4">
+		<h2>{from} → {to}</h2>
+		<p class="truncate text-xs text-white/35">
+			Antippen für Wecker · {alarmLead} min Fußweg eingeplant
+		</p>
+	</header>
 
 	{#if !journeys}
 		<p class="m-auto text-sm text-white/60">Verbindungen gerade nicht verfügbar</p>

@@ -33,8 +33,8 @@
 		unlockSound();
 	}
 
-	// How long before departure an alarm goes off.
-	const ALARM_LEAD = 12 * 60_000;
+	// Minutes before departure at which an alarm goes off: the walk to the station.
+	const ALARM_LEAD = 12;
 
 	const ALARM_STORAGE = 'dash:alarms';
 
@@ -100,7 +100,7 @@
 		for (const [id, stored] of alarms) {
 			// Follow delays: prefer the refreshed journey over the one the alarm was set on.
 			const journey = data.journeys?.find((j) => j.id === id) ?? stored;
-			if (now.getTime() < new Date(journey.departure).getTime() - ALARM_LEAD) continue;
+			if (now.getTime() < new Date(journey.departure).getTime() - ALARM_LEAD * 60_000) continue;
 			alarms.delete(id);
 			ringing = journey;
 			const audio = getSound();
@@ -156,6 +156,7 @@
 			{now}
 			{alarms}
 			ontoggle={toggleAlarm}
+			alarmLead={ALARM_LEAD}
 		/>
 	</aside>
 </main>
