@@ -17,6 +17,8 @@
 	// How far a swipe has to travel before it counts as dragging, and before it closes.
 	const DRAG_START = 8;
 	const CLOSE_DISTANCE = 120;
+	// How long after closing the sheet a tap on the night mode control takes effect.
+	const NIGHT_DELAY = 1000;
 
 	const timeFormat = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
 	const dateFormat = new Intl.DateTimeFormat('de-DE', {
@@ -74,6 +76,12 @@
 		drag = 0;
 		if (close) open = false;
 		else offset.target = 0;
+	}
+
+	// Night mode switches once the sheet is out of the way, so the change is seen on the home screen.
+	function toggleNight() {
+		open = false;
+		setTimeout(night.toggle, NIGHT_DELAY);
 	}
 
 	function onkeydown(event: KeyboardEvent) {
@@ -180,7 +188,7 @@
 					'flex h-16 cursor-pointer items-center gap-4 rounded-full pr-7 pl-5 transition-colors',
 					night.active ? 'bg-white/25 active:bg-white/35' : 'bg-white/10 active:bg-white/30'
 				]}
-				onclick={night.toggle}
+				onclick={toggleNight}
 			>
 				<Moon size={26} strokeWidth={1.5} />
 				<span class="flex flex-col items-start leading-tight">
