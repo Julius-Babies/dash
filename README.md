@@ -16,7 +16,8 @@ kleine Apps, vor dem Bing-Bild des Tages.
 - **App-Drawer**: Tap oder Wisch nach oben auf dem Bild. Bisher gibt es einen Timer und einen Wecker
   mit Wochentagen; laufende Timer und Wecker der nächsten 12 Stunden erscheinen über der Uhr.
 - **Nachtmodus** von 22:00 bis 05:55: rote Schrift auf Schwarz, ohne Hintergrundbild. Lässt sich unten im
-  App-Drawer von Hand umschalten und hält dann bis zum nächsten Wechsel des Zeitplans.
+  App-Drawer von Hand umschalten und hält dann bis zum nächsten Wechsel des Zeitplans. Klingelt vor 09:00 ein Wecker,
+  endet der Nachtmodus stattdessen 5 Minuten davor.
 
 Wecker und Timer werden im Browser gespeichert und überstehen ein Neuladen.
 

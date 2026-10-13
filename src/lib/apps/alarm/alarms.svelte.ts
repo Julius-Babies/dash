@@ -112,6 +112,11 @@ class Alarms {
 			// Unreadable storage only costs the saved alarms.
 		}
 
+		host.wakeBy((after) => {
+			const rings = this.list.filter((alarm) => alarm.enabled).map((alarm) => nextRing(alarm, after));
+			return rings.length > 0 ? Math.min(...rings) : undefined;
+		});
+
 		let checked = Date.now();
 		const interval = setInterval(() => {
 			const now = Date.now();

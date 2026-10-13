@@ -7,6 +7,11 @@ export type AppHost = {
 	goHome(): void;
 	/** Shows a full-screen alert with the alarm sound until it is dismissed. */
 	alert(alert: Alert): void;
+	/**
+	 * Tells the dashboard how to learn when an alarm rings, so that night mode can end just
+	 * before. `next` returns the first ring after the given time, if there is one.
+	 */
+	wakeBy(next: (after: number) => number | undefined): void;
 };
 
 /**

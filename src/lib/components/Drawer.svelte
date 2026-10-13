@@ -194,7 +194,12 @@
 				<span class="flex flex-col items-start leading-tight">
 					<span>Nachtmodus</span>
 					<span class="text-sm text-white/50">
-						{night.active ? `An bis ${night.end}` : `Aus bis ${night.start}`}
+						{#if night.active}
+							An bis {timeFormat.format(night.ends.at)}
+							{#if night.ends.alarm}· Wecker {timeFormat.format(night.ends.alarm)}{/if}
+						{:else}
+							Aus bis {night.start}
+						{/if}
 					</span>
 				</span>
 			</button>

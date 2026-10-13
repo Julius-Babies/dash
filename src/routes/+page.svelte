@@ -12,6 +12,7 @@
 	import Drawer from '#lib/components/Drawer.svelte';
 	import NightActivity from '#lib/components/NightActivity.svelte';
 	import Weather from '#lib/components/Weather.svelte';
+	import { night } from '#lib/night.svelte.ts';
 	import type { Journey } from '#lib/server/vbb.ts';
 	import type { PageProps } from './$types';
 
@@ -52,7 +53,8 @@
 
 	const host: AppHost = {
 		goHome: () => (drawerOpen = false),
-		alert: alerts.ring
+		alert: alerts.ring,
+		wakeBy: night.wakeBy
 	};
 
 	onMount(() => {
