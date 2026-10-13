@@ -4,7 +4,9 @@
 	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 	import Connections from '#lib/components/Connections.svelte';
+	import Drawer from '#lib/components/Drawer.svelte';
 	import Weather from '#lib/components/Weather.svelte';
 	import type { Journey } from '#lib/server/vbb.ts';
 	import type { PageProps } from './$types';
@@ -28,9 +30,26 @@
 		return () => clearInterval(interval);
 	});
 
+	// `?disable_fullscreen` keeps taps from switching to fullscreen, e.g. while developing.
+	const fullscreenDisabled = $derived(page.url.searchParams.has('disable_fullscreen'));
+
 	function ontap() {
-		if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+		if (!fullscreenDisabled && !document.fullscreenElement) {
+			document.documentElement.requestFullscreen();
+		}
 		unlockSound();
+	}
+
+	// How far up a swipe on the image has to travel to open the drawer.
+	const SWIPE_OPEN = 40;
+
+	let drawerOpen = $state(false);
+	let swipeStart: number | undefined;
+
+	function onswipemove(event: PointerEvent) {
+		if (swipeStart === undefined || swipeStart - event.clientY < SWIPE_OPEN) return;
+		swipeStart = undefined;
+		drawerOpen = true;
 	}
 
 	// Minutes before departure at which an alarm goes off: the walk to the station.
@@ -40,8 +59,9 @@
 
 	const alarms = new SvelteMap<string, Journey>();
 	let ringing = $state<Journey>();
-	let sound: HTMLAudioElement | undefined;
-	let unlocked = false;
+	let audioContext: AudioContext | undefined;
+	let alarmBuffer: Promise<AudioBuffer> | undefined;
+	let alarmSource: AudioBufferSourceNode | undefined;
 	// Keeps the first save from wiping the stored alarms before they were read.
 	let restored = $state(false);
 
@@ -61,29 +81,37 @@
 		if (restored) localStorage.setItem(ALARM_STORAGE, JSON.stringify([...alarms.values()]));
 	});
 
-	function getSound() {
-		return (sound ??= Object.assign(new Audio('/alarm.mp3'), { loop: true }));
+	function getAudioContext() {
+		const context = (audioContext ??= new AudioContext());
+		alarmBuffer ??= fetch('/alarm.mp3')
+			.then((res) => res.arrayBuffer())
+			.then((data) => context.decodeAudioData(data));
+		return context;
 	}
 
-	// Unless the browser is set up to allow autoplay, a page may only start sound on its own
-	// once it was started from a tap, so play it silently on the first tap to ring later.
+	// Unless the browser is set up to allow autoplay, an audio context stays suspended until
+	// it is resumed from a tap. Resuming makes no sound itself, and an alarm that is already
+	// ringing silently becomes audible.
 	function unlockSound() {
-		if (unlocked) return;
-		unlocked = true;
-		const audio = getSound();
-		if (ringing) {
-			// An alarm that came up silently: this tap is what lets it be heard.
-			audio.play().catch(() => {});
-			return;
-		}
-		audio.muted = true;
-		audio
-			.play()
-			.then(() => {
-				if (!ringing) audio.pause();
-				audio.muted = false;
-			})
-			.catch(() => (audio.muted = false));
+		getAudioContext()
+			.resume()
+			.catch(() => {});
+	}
+
+	async function startSound() {
+		const context = getAudioContext();
+		// Without a tap so far this stays pending; the source below then waits for `unlockSound`.
+		context.resume().catch(() => {});
+		const buffer = await alarmBuffer!;
+		if (!ringing || alarmSource) return;
+		alarmSource = new AudioBufferSourceNode(context, { buffer, loop: true });
+		alarmSource.connect(context.destination);
+		alarmSource.start();
+	}
+
+	function stopSound() {
+		alarmSource?.stop();
+		alarmSource = undefined;
 	}
 
 	function toggleAlarm(journey: Journey) {
@@ -92,7 +120,7 @@
 
 	function dismissAlarm() {
 		ringing = undefined;
-		sound?.pause();
+		stopSound();
 	}
 
 	$effect(() => {
@@ -103,11 +131,7 @@
 			if (now.getTime() < new Date(journey.departure).getTime() - ALARM_LEAD * 60_000) continue;
 			alarms.delete(id);
 			ringing = journey;
-			const audio = getSound();
-			audio.muted = false;
-			audio.currentTime = 0;
-			// Rejected when the browser still requires a tap; `unlockSound` picks it up then.
-			audio.play().catch(() => {});
+			startSound().catch((error) => console.error('Failed to play alarm sound', error));
 		}
 	});
 
@@ -126,7 +150,17 @@
 <main
 	class="grid h-dvh grid-rows-[auto_1fr] text-white md:grid-cols-[1fr_minmax(0,38rem)] md:grid-rows-1"
 >
-	<section class="flex flex-col justify-end p-[5vw] select-none">
+	<section class="pointer-events-none relative flex flex-col justify-end p-[5vw] select-none">
+		<button
+			type="button"
+			aria-label="Apps öffnen"
+			class="pointer-events-auto absolute inset-0 cursor-pointer touch-none"
+			onclick={() => (drawerOpen = true)}
+			onpointerdown={(event) => (swipeStart = event.clientY)}
+			onpointermove={onswipemove}
+			onpointerup={() => (swipeStart = undefined)}
+			onpointercancel={() => (swipeStart = undefined)}
+		></button>
 		{#if now}
 			<time
 				datetime={now.toISOString()}
@@ -160,6 +194,8 @@
 		/>
 	</aside>
 </main>
+
+<Drawer bind:open={drawerOpen} {now} />
 
 {#if ringing}
 	<div
