@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { BellRing } from '@lucide/svelte';
+	import NumberFlow, { NumberFlowGroup } from '@number-flow/svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { invalidate } from '$app/navigation';
 	import Connections from '#lib/components/Connections.svelte';
@@ -10,6 +11,7 @@
 	let { data }: PageProps = $props();
 
 	const timeFormat = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
+	const TWO_DIGITS = { minimumIntegerDigits: 2 };
 	const dateFormat = new Intl.DateTimeFormat('de-DE', {
 		weekday: 'long',
 		day: 'numeric',
@@ -94,12 +96,14 @@
 		{#if now}
 			<time
 				datetime={now.toISOString()}
-				class="block text-[clamp(5rem,13vw,11rem)] font-mono leading-none font-extralight tracking-[-0.09em]"
+				class="-my-[0.25em] block text-[clamp(5rem,13vw,11rem)] font-mono leading-none font-extralight tracking-[-0.09em]"
 			>
-				{#each timeFormat.format(now).split(':') as part, i (i)}
+				<NumberFlowGroup>
 					<!-- The colon sits in a full-width cell; pull its neighbours in. -->
-					{#if i > 0}<span class="-mx-[0.14em]">:</span>{/if}{part}
-				{/each}
+					<NumberFlow value={now.getHours()} format={TWO_DIGITS} /><span class="-mx-[0.14em]"
+						>:</span
+					><NumberFlow value={now.getMinutes()} format={TWO_DIGITS} />
+				</NumberFlowGroup>
 			</time>
 			<p class="mt-[1.5vw] text-[clamp(1.25rem,2.2vw,2rem)] leading-tight font-light text-white/80">
 				{dateFormat.format(now)}

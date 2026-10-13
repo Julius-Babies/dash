@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { Bell } from '@lucide/svelte';
+	import NumberFlow from '@number-flow/svelte';
+	import { flip } from 'svelte/animate';
+	import { fade, scale } from 'svelte/transition';
 	import type { Journey } from '#lib/server/vbb.ts';
 
 	type Props = {
@@ -24,11 +27,8 @@
 		(journeys ?? []).filter((journey) => !now || new Date(journey.departure) >= now).slice(0, 8)
 	);
 
-	function countdown(departure: string, now: Date) {
-		const minutes = Math.round((new Date(departure).getTime() - now.getTime()) / 60_000);
-		if (minutes < 1) return 'jetzt';
-		if (minutes < 60) return `in ${minutes} min`;
-		return `in ${Math.floor(minutes / 60)} h ${minutes % 60} min`;
+	function minutesUntil(departure: string, now: Date) {
+		return Math.round((new Date(departure).getTime() - now.getTime()) / 60_000);
 	}
 </script>
 
@@ -40,15 +40,21 @@
 	{:else if upcoming.length === 0}
 		<p class="m-auto text-sm text-white/60">Keine Verbindungen gefunden</p>
 	{:else}
-		<ul class="-mx-3 flex flex-col gap-0.5">
+		<ul class="-mx-3 flex flex-col">
 			{#each upcoming as journey (journey.id)}
 				{@const armed = alarms.has(journey.id)}
-				<li class:opacity-50={journey.cancelled}>
+				<li
+					class="transition-opacity duration-500"
+					class:opacity-50={journey.cancelled}
+					animate:flip={{ duration: 500 }}
+					in:fade={{ duration: 500 }}
+					out:fade={{ duration: 300 }}
+				>
 					<button
 						type="button"
 						aria-pressed={armed}
 						aria-label="Wecker für {timeFormat.format(new Date(journey.departure))} Uhr"
-						class="flex w-full cursor-pointer items-center gap-4 rounded-xl px-3 py-[5px] text-left leading-6 {armed
+						class="flex w-full cursor-pointer items-center gap-4 rounded-xl px-3 py-[5px] text-left leading-6 transition-colors duration-300 {armed
 							? 'bg-white/10'
 							: ''}"
 						onclick={() => ontoggle(journey)}
@@ -57,7 +63,7 @@
 						<span class="w-12" class:line-through={journey.cancelled}>
 							{timeFormat.format(new Date(journey.departure))}
 							{#if journey.delay > 0}
-								<sup class="text-xs font-medium text-red-300">+{journey.delay}</sup>
+								<sup class="text-xs font-medium text-red-300" transition:fade>+{journey.delay}</sup>
 							{/if}
 						</span>
 						<span class="text-xs text-white/30">→</span>
@@ -83,11 +89,26 @@
 					</span>
 
 					<span class="flex shrink-0 items-center gap-2 text-right text-sm text-white/80">
-						{#if armed}<Bell size={14} strokeWidth={1.75} class="text-amber-200" />{/if}
+						{#if armed}
+							<span class="text-amber-200" transition:scale={{ duration: 250 }}>
+								<Bell size={14} strokeWidth={1.75} />
+							</span>
+						{/if}
 						{#if journey.cancelled}
 							<span class="text-red-300">Fällt aus</span>
 						{:else if now}
-							{countdown(journey.departure, now)}
+							{@const minutes = minutesUntil(journey.departure, now)}
+							{#if minutes < 1}
+								<span in:fade>jetzt</span>
+							{:else}
+								<span class="tabular-nums">
+									in
+									{#if minutes >= 60}
+										<NumberFlow value={Math.floor(minutes / 60)} suffix=" h" />
+									{/if}
+									<NumberFlow value={minutes % 60} suffix=" min" />
+								</span>
+							{/if}
 						{/if}
 					</span>
 					</button>
