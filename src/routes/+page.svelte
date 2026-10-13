@@ -123,7 +123,7 @@
 <svelte:document onclick={ontap} />
 
 <main
-	class="grid h-dvh grid-rows-[auto_1fr] text-white md:grid-cols-[1fr_minmax(0,38rem)] md:grid-rows-1"
+	class="grid h-dvh grid-rows-[auto_1fr] overflow-hidden text-white md:grid-cols-[1fr_minmax(0,38rem)] md:grid-rows-1"
 >
 	<section class="pointer-events-none relative flex flex-col justify-end p-[5vw] select-none">
 		<button
