@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { BellRing } from '@lucide/svelte';
 	import NumberFlow, { NumberFlowGroup } from '@number-flow/svelte';
+	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { invalidate } from '$app/navigation';
 	import Connections from '#lib/components/Connections.svelte';
@@ -27,33 +28,54 @@
 		return () => clearInterval(interval);
 	});
 
-	function enterFullscreen() {
+	function ontap() {
 		if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+		unlockSound();
 	}
 
 	// How long before departure an alarm goes off.
 	const ALARM_LEAD = 12 * 60_000;
 
+	const ALARM_STORAGE = 'dash:alarms';
+
 	const alarms = new SvelteMap<string, Journey>();
 	let ringing = $state<Journey>();
 	let sound: HTMLAudioElement | undefined;
+	// Keeps the first save from wiping the stored alarms before they were read.
+	let restored = $state(false);
+
+	onMount(() => {
+		try {
+			const stored: Journey[] = JSON.parse(localStorage.getItem(ALARM_STORAGE) ?? '[]');
+			for (const journey of stored) {
+				if (new Date(journey.departure).getTime() > Date.now()) alarms.set(journey.id, journey);
+			}
+		} catch {
+			// Unreadable storage only costs the saved alarms.
+		}
+		restored = true;
+	});
+
+	$effect(() => {
+		if (restored) localStorage.setItem(ALARM_STORAGE, JSON.stringify([...alarms.values()]));
+	});
+
+	// Browsers only let a page start sound on its own once it was started from a tap,
+	// so play it silently on the first tap to be allowed to ring later.
+	function unlockSound() {
+		if (sound) return;
+		const audio = (sound = Object.assign(new Audio('/alarm.mp3'), { loop: true, muted: !ringing }));
+		audio
+			.play()
+			.then(() => {
+				if (!ringing) audio.pause();
+				audio.muted = false;
+			})
+			.catch(() => (audio.muted = false));
+	}
 
 	function toggleAlarm(journey: Journey) {
-		if (alarms.delete(journey.id)) return;
-		alarms.set(journey.id, journey);
-
-		// Browsers only let a page start sound on its own once it was started from a tap,
-		// so play it silently now to be allowed to ring later.
-		if (!sound) {
-			const audio = (sound = Object.assign(new Audio('/alarm.mp3'), { loop: true, muted: true }));
-			audio
-				.play()
-				.then(() => {
-					if (!ringing) audio.pause();
-					audio.muted = false;
-				})
-				.catch(() => (audio.muted = false));
-		}
+		if (!alarms.delete(journey.id)) alarms.set(journey.id, journey);
 	}
 
 	function dismissAlarm() {
@@ -87,7 +109,7 @@
 	<title>Dash</title>
 </svelte:head>
 
-<svelte:document onclick={enterFullscreen} />
+<svelte:document onclick={ontap} />
 
 <main
 	class="grid h-dvh grid-rows-[auto_1fr] text-white md:grid-cols-[1fr_minmax(0,38rem)] md:grid-rows-1"
