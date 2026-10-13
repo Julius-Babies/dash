@@ -22,7 +22,7 @@
 
 {#if now}
 	<div
-		class="fixed bottom-[12vh] left-[5vw] font-['Segoe_UI','Segoe_UI_Variable',system-ui,sans-serif] text-white select-none"
+		class="fixed bottom-[12vh] left-[5vw] text-white select-none"
 	>
 		<time datetime={now.toISOString()} class="block text-[clamp(5rem,13vw,11rem)] leading-none font-light tabular-nums">
 			{timeFormat.format(now)}
