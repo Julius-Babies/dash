@@ -1,5 +1,6 @@
 const API = 'https://v6.vbb.transport.rest';
 const TTL = 30 * 1000;
+const PAGES = 2;
 
 export type Journey = {
 	departure: string;
@@ -30,17 +31,27 @@ export async function getJourneys(from: string, to: string, fetch = globalThis.f
 	const cached = cache.get(key);
 	if (cached && Date.now() - cached.fetchedAt < TTL) return cached.journeys;
 
-	const params = new URLSearchParams({
-		from,
-		to,
-		results: '8',
-		stopovers: 'false',
-		remarks: 'false'
-	});
-	const res = await fetch(`${API}/journeys?${params}`);
-	if (!res.ok) throw new Error(`VBB responded with ${res.status}`);
+	// The API returns at most a handful of journeys per request, so follow `laterRef` for more.
+	const raw: { legs: Leg[] }[] = [];
+	let laterThan: string | undefined;
+	for (let page = 0; page < PAGES; page++) {
+		const params = new URLSearchParams({
+			from,
+			to,
+			results: '6',
+			stopovers: 'false',
+			remarks: 'false'
+		});
+		if (laterThan) params.set('laterThan', laterThan);
+		const res = await fetch(`${API}/journeys?${params}`);
+		if (!res.ok) throw new Error(`VBB responded with ${res.status}`);
+		const body = await res.json();
+		raw.push(...body.journeys);
+		laterThan = body.laterRef;
+		if (!laterThan) break;
+	}
 
-	const journeys: Journey[] = (await res.json()).journeys.map((journey: { legs: Leg[] }) => {
+	const journeys: Journey[] = raw.map((journey) => {
 		const rides = journey.legs.filter((leg) => !leg.walking);
 		const first = rides[0];
 		const last = rides[rides.length - 1];

@@ -17,7 +17,7 @@
 	});
 
 	const upcoming = $derived(
-		(journeys ?? []).filter((journey) => !now || new Date(journey.departure) >= now).slice(0, 4)
+		(journeys ?? []).filter((journey) => !now || new Date(journey.departure) >= now).slice(0, 8)
 	);
 
 	function countdown(departure: string, now: Date) {
@@ -36,18 +36,18 @@
 	{:else if upcoming.length === 0}
 		<p class="m-auto text-sm text-white/60">Keine Verbindungen gefunden</p>
 	{:else}
-		<ul class="flex flex-1 flex-col justify-around">
+		<ul class="flex flex-col gap-3">
 			{#each upcoming as journey (journey.departure + journey.lines.map((l) => l.name).join())}
-				<li class="flex items-center gap-5" class:opacity-50={journey.cancelled}>
-					<span class="flex shrink-0 items-baseline gap-2 text-xl tabular-nums">
-						<span class="w-16" class:line-through={journey.cancelled}>
+				<li class="flex items-center gap-4 leading-6" class:opacity-50={journey.cancelled}>
+					<span class="flex shrink-0 items-baseline gap-1.5 tabular-nums">
+						<span class="w-12" class:line-through={journey.cancelled}>
 							{timeFormat.format(new Date(journey.departure))}
 							{#if journey.delay > 0}
 								<sup class="text-xs font-medium text-red-300">+{journey.delay}</sup>
 							{/if}
 						</span>
-						<span class="text-sm text-white/30">→</span>
-						<span class="w-16 font-light text-white/60" class:line-through={journey.cancelled}>
+						<span class="text-xs text-white/30">→</span>
+						<span class="w-12 font-light text-white/60" class:line-through={journey.cancelled}>
 							{timeFormat.format(new Date(journey.arrival))}
 						</span>
 					</span>
@@ -56,7 +56,7 @@
 						{#each journey.lines as line, i (i)}
 							{#if i > 0}<span class="text-white/30">›</span>{/if}
 							<span
-								class="rounded-full bg-white/15 px-2.5 py-1 leading-none font-medium"
+								class="rounded-full bg-white/15 px-2 py-0.5 leading-none font-medium"
 								style:color={line.fg}
 								style:background-color={line.bg}
 							>
