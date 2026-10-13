@@ -1,12 +1,13 @@
 const API = 'https://api.open-meteo.com/v1/forecast';
 const TTL = 15 * 60 * 1000;
-const HOUR = 60 * 60 * 1000;
 
 export type HourlyWeather = {
 	time: number;
 	temperature: number;
-	/** Precipitation probability in percent. */
+	/** Precipitation in mm. */
 	precipitation: number;
+	/** Precipitation probability in percent. */
+	probability: number;
 	/** WMO weather code. */
 	code: number;
 	isDay: boolean;
@@ -33,7 +34,7 @@ async function getForecast(latitude: number, longitude: number, fetch: typeof gl
 	const params = new URLSearchParams({
 		latitude: String(latitude),
 		longitude: String(longitude),
-		hourly: 'temperature_2m,precipitation_probability,weather_code,is_day',
+		hourly: 'temperature_2m,precipitation,precipitation_probability,weather_code,is_day',
 		daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum',
 		timezone: 'Europe/Berlin',
 		timeformat: 'unixtime',
@@ -47,7 +48,8 @@ async function getForecast(latitude: number, longitude: number, fetch: typeof gl
 		hourly: hourly.time.map((time: number, i: number) => ({
 			time: time * 1000,
 			temperature: hourly.temperature_2m[i],
-			precipitation: hourly.precipitation_probability[i],
+			precipitation: hourly.precipitation[i],
+			probability: hourly.precipitation_probability[i],
 			code: hourly.weather_code[i],
 			isDay: hourly.is_day[i] === 1
 		})),
@@ -64,7 +66,7 @@ async function getForecast(latitude: number, longitude: number, fetch: typeof gl
 	return weather;
 }
 
-/** The coming hours starting with the current one, and the three days after today. */
+/** Every hour of today, and the three days after it. */
 export async function getWeather(
 	latitude: number,
 	longitude: number,
@@ -72,8 +74,12 @@ export async function getWeather(
 ): Promise<Weather> {
 	const { hourly, daily } = await getForecast(latitude, longitude, fetch);
 	const now = Date.now();
+	// Day boundaries come from the API so that DST days with 23 or 25 hours work.
+	const today = daily.findLastIndex((day) => day.time <= now);
+	const start = daily[today]?.time ?? now;
+	const end = daily[today + 1]?.time ?? Infinity;
 	return {
-		hourly: hourly.filter((hour) => hour.time + HOUR > now).slice(0, 6),
-		daily: daily.filter((day) => day.time > now).slice(0, 3)
+		hourly: hourly.filter((hour) => hour.time >= start && hour.time < end),
+		daily: daily.slice(today + 1, today + 4)
 	};
 }
