@@ -41,6 +41,7 @@
 	const alarms = new SvelteMap<string, Journey>();
 	let ringing = $state<Journey>();
 	let sound: HTMLAudioElement | undefined;
+	let unlocked = false;
 	// Keeps the first save from wiping the stored alarms before they were read.
 	let restored = $state(false);
 
@@ -60,11 +61,22 @@
 		if (restored) localStorage.setItem(ALARM_STORAGE, JSON.stringify([...alarms.values()]));
 	});
 
-	// Browsers only let a page start sound on its own once it was started from a tap,
-	// so play it silently on the first tap to be allowed to ring later.
+	function getSound() {
+		return (sound ??= Object.assign(new Audio('/alarm.mp3'), { loop: true }));
+	}
+
+	// Unless the browser is set up to allow autoplay, a page may only start sound on its own
+	// once it was started from a tap, so play it silently on the first tap to ring later.
 	function unlockSound() {
-		if (sound) return;
-		const audio = (sound = Object.assign(new Audio('/alarm.mp3'), { loop: true, muted: !ringing }));
+		if (unlocked) return;
+		unlocked = true;
+		const audio = getSound();
+		if (ringing) {
+			// An alarm that came up silently: this tap is what lets it be heard.
+			audio.play().catch(() => {});
+			return;
+		}
+		audio.muted = true;
 		audio
 			.play()
 			.then(() => {
@@ -91,11 +103,11 @@
 			if (now.getTime() < new Date(journey.departure).getTime() - ALARM_LEAD) continue;
 			alarms.delete(id);
 			ringing = journey;
-			if (sound) {
-				sound.muted = false;
-				sound.currentTime = 0;
-				sound.play().catch(() => {});
-			}
+			const audio = getSound();
+			audio.muted = false;
+			audio.currentTime = 0;
+			// Rejected when the browser still requires a tap; `unlockSound` picks it up then.
+			audio.play().catch(() => {});
 		}
 	});
 
