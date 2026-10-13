@@ -46,9 +46,12 @@
 		{#if now}
 			<time
 				datetime={now.toISOString()}
-				class="block text-[clamp(5rem,13vw,11rem)] font-mono leading-none font-extralight tracking-tighter"
+				class="block text-[clamp(5rem,13vw,11rem)] font-mono leading-none font-extralight tracking-[-0.09em]"
 			>
-				{timeFormat.format(now)}
+				{#each timeFormat.format(now).split(':') as part, i (i)}
+					<!-- The colon sits in a full-width cell; pull its neighbours in. -->
+					{#if i > 0}<span class="-mx-[0.14em]">:</span>{/if}{part}
+				{/each}
 			</time>
 			<p class="mt-[1.5vw] text-[clamp(1.25rem,2.2vw,2rem)] leading-tight font-light text-white/80">
 				{dateFormat.format(now)}
