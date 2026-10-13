@@ -215,7 +215,7 @@
 						{#each hours as hour, i (hour.time)}
 							{#if i % 3 === 0}
 								<span
-									class="text-center"
+									class="shrink-0 text-center"
 									style:width="{band}px"
 									style:margin-right="{band * 2}px"
 									style:opacity={i < current ? 0.6 : 1}
@@ -224,6 +224,8 @@
 								</span>
 							{/if}
 						{/each}
+						<!-- Midnight closes the axis; it lies one band past the last hour of the day. -->
+						<span class="shrink-0 text-center" style:width="{band}px">24</span>
 					</div>
 				</div>
 			</figure>

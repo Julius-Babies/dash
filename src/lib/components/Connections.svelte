@@ -35,7 +35,7 @@
 </script>
 
 <section class="panel">
-	<header class="panel-title flex items-baseline justify-between gap-4">
+	<header class="panel-title mb-3! flex items-baseline justify-between gap-4">
 		<h2>{from} → {to}</h2>
 		<p class="truncate text-xs text-white/35">
 			Antippen für Wecker · {alarmLead} min Fußweg eingeplant
@@ -47,6 +47,15 @@
 	{:else if upcoming.length === 0}
 		<p class="m-auto text-sm text-white/60">Keine Verbindungen gefunden</p>
 	{:else}
+		<div class="mb-1 flex gap-4 text-[10px] tracking-wider text-white/35 uppercase" aria-hidden="true">
+			<span class="flex shrink-0 gap-1.5">
+				<span class="w-12">Dep</span>
+				<span class="w-[11px]"></span>
+				<span class="w-12">Arr</span>
+			</span>
+			<span>Verbindung</span>
+		</div>
+
 		<ul class="-mx-3 flex flex-col">
 			{#each upcoming as journey (journey.id)}
 				{@const armed = alarms.has(journey.id)}
@@ -68,14 +77,18 @@
 					>
 					<span class="flex shrink-0 items-baseline gap-1.5 tabular-nums">
 						<span
-							class="w-12 transition-colors duration-500"
+							class="relative w-12 transition-colors duration-500"
 							class:line-through={journey.cancelled}
 							class:text-red-300={journey.delay > 0}
 						>
 							{timeFormat.format(new Date(journey.departure))}
 							{#if journey.delay > 0}
-								<!-- The time above already includes the delay; this is what it was planned as. -->
-								<span class="-mt-1 block text-[10px] leading-3 whitespace-nowrap" transition:fade>
+								<!-- The time above already includes the delay; this is what it was planned as.
+								     Out of flow, so a delayed row lines up with the others. -->
+								<span
+									class="absolute top-full left-0 -mt-1 text-[10px] leading-3 whitespace-nowrap"
+									transition:fade
+								>
 									<s class="text-white/40">
 										{timeFormat.format(new Date(journey.departure).getTime() - journey.delay * 60_000)}
 									</s>
