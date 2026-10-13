@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { ChevronLeft, Moon, RotateCw, X } from '@lucide/svelte';
-	import { cubicOut } from 'svelte/easing';
+	import { cubicInOut, cubicOut } from 'svelte/easing';
 	import { Tween } from 'svelte/motion';
-	import { fade, slide } from 'svelte/transition';
 	import type { AppHost, DashApp } from '#lib/apps/types.ts';
 	import { night } from '#lib/night.svelte.ts';
 
@@ -12,6 +11,8 @@
 
 	// The app that is open; the launcher shows while there is none.
 	let active = $state<DashApp>();
+	// The app that is on screen: it outlives `active` for as long as it shrinks back into its icon.
+	let shown = $state<DashApp>();
 
 	// Closes itself after this long without a touch or key press.
 	const IDLE_TIMEOUT = 2 * 60_000;
@@ -19,7 +20,7 @@
 	const DRAG_START = 8;
 	const CLOSE_DISTANCE = 120;
 	// How long an app takes to grow out of its icon, or to shrink back into it.
-	const APP_ZOOM = 380;
+	const APP_ZOOM = 450;
 	// How long after closing the sheet a tap on the night mode control takes effect.
 	const NIGHT_DELAY = 1000;
 
@@ -43,7 +44,9 @@
 
 	// Start from the launcher again next time, but only once the sheet is out of sight.
 	$effect(() => {
-		if (!open && offset.current >= 1) active = undefined;
+		if (open || offset.current < 1) return;
+		active = undefined;
+		zoom.set(0, { duration: 0 });
 	});
 
 	$effect(() => {
@@ -81,28 +84,52 @@
 		else offset.target = 0;
 	}
 
-	// Where the icon of the app sits within the content area: apps grow out of this point.
+	// How far the open app has grown out of its icon: 0 is the launcher, 1 the app at full size.
+	// The header follows the same number, so that nothing in it moves on its own.
+	const zoom = new Tween(0, { duration: APP_ZOOM, easing: cubicInOut });
+	const BACK_WIDTH = 76;
+	const ICON_RADIUS = 24;
+
 	let content = $state<HTMLElement>();
-	let origin = $state('50% 50%');
+	// How far the icon of the app sits from each edge of the content area.
+	let icon = $state({ top: 0, right: 0, bottom: 0, left: 0 });
 
-	function launch(app: DashApp, icon: HTMLElement) {
-		if (content) {
+	const origin = $derived.by(() => {
+		if (!content) return '50% 50%';
+		const x = (icon.left + content.clientWidth - icon.right) / 2;
+		const y = (icon.top + content.clientHeight - icon.bottom) / 2;
+		return `${x}px ${y}px`;
+	});
+
+	// The app is cut out to a rounded box that starts as its icon and grows to the full area.
+	const cutout = $derived.by(() => {
+		const rest = 1 - zoom.current;
+		if (rest === 0) return 'none';
+		const sides = [icon.top, icon.right, icon.bottom, icon.left].map((side) => `${side * rest}px`);
+		return `inset(${sides.join(' ')} round ${ICON_RADIUS * rest}px)`;
+	});
+
+	function launch(app: DashApp, tile: Element | null) {
+		if (content && tile) {
 			const area = content.getBoundingClientRect();
-			const box = icon.getBoundingClientRect();
-			origin = `${box.left + box.width / 2 - area.left}px ${box.top + box.height / 2 - area.top}px`;
+			const box = tile.getBoundingClientRect();
+			icon = {
+				top: box.top - area.top,
+				right: area.right - box.right,
+				bottom: area.bottom - box.bottom,
+				left: box.left - area.left
+			};
 		}
-		active = app;
+		active = shown = app;
 	}
 
-	// The app grows out of its icon while the launcher zooms past the viewer, and back.
-	function zoom(_node: Element, { from }: { from: number }) {
-		return {
-			duration: APP_ZOOM,
-			easing: cubicOut,
-			css: (t: number) =>
-				`opacity: ${t}; transform: scale(${from + (1 - from) * t}); transform-origin: ${origin}`
-		};
-	}
+	$effect(() => {
+		zoom.target = active ? 1 : 0;
+	});
+
+	$effect(() => {
+		if (!active && zoom.current === 0) shown = undefined;
+	});
 
 	// Night mode switches once the sheet is out of the way, so the change is seen on the home screen.
 	function toggleNight() {
@@ -137,18 +164,22 @@
 
 		<header class="flex items-center justify-between px-[5vw] pt-8">
 			<div class="flex items-center">
-				{#if active}
-					<div class="pr-5" transition:slide={{ axis: 'x', duration: APP_ZOOM }}>
-						<button
-							type="button"
-							aria-label="Zurück zu den Apps"
-							class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
-							onclick={() => (active = undefined)}
-						>
-							<ChevronLeft size={28} strokeWidth={1.5} />
-						</button>
-					</div>
-				{/if}
+				<!-- Makes room as the app grows, instead of pushing the time aside at once. -->
+				<div
+					class="overflow-hidden"
+					style:width="{BACK_WIDTH * zoom.current}px"
+					style:opacity={zoom.current}
+					inert={!active}
+				>
+					<button
+						type="button"
+						aria-label="Zurück zu den Apps"
+						class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
+						onclick={() => (active = undefined)}
+					>
+						<ChevronLeft size={28} strokeWidth={1.5} />
+					</button>
+				</div>
 				{#if now}
 					<time datetime={now.toISOString()} class="font-mono text-5xl font-extralight tracking-[-0.09em]">
 						{#each timeFormat.format(now).split(':') as part, i (i)}
@@ -156,14 +187,15 @@
 							{#if i > 0}<span class="-mx-[0.14em]">:</span>{/if}{part}
 						{/each}
 					</time>
-					{#key active}
-						<p
-							class="ml-5 self-end pb-1 text-xl font-light whitespace-nowrap text-white/60"
-							in:fade={{ duration: APP_ZOOM }}
-						>
-							{active ? active.name : dateFormat.format(now)}
-						</p>
-					{/key}
+					<!-- Date and app name share one cell and fade into each other. -->
+					<p class="ml-5 grid self-end pb-1 text-xl font-light whitespace-nowrap text-white/60">
+						<span class="col-start-1 row-start-1" style:opacity={1 - zoom.current}>
+							{dateFormat.format(now)}
+						</span>
+						<span class="col-start-1 row-start-1" style:opacity={zoom.current}>
+							{shown?.name}
+						</span>
+					</p>
 				{/if}
 			</div>
 
@@ -187,34 +219,49 @@
 			</div>
 		</header>
 
-		<!-- App and launcher overlap while one zooms into the other. -->
+		<!-- The app grows out of its icon, on top of the launcher fading away behind it. -->
 		<div class="relative min-h-0 flex-1 overflow-hidden" bind:this={content}>
-			{#if active}
-				<div class="absolute inset-0 px-[5vw] pt-10 pb-8" transition:zoom={{ from: 0.4 }}>
-					<active.view {host} />
-				</div>
-			{:else}
-				<ul
-					class="absolute inset-0 flex flex-wrap content-start gap-8 px-[5vw] pt-10 pb-8"
-					transition:zoom={{ from: 1.25 }}
-				>
-					{#each apps as app (app.id)}
-						<li>
-							<button
-								type="button"
-								class="group flex w-28 cursor-pointer flex-col items-center gap-3"
-								onclick={(event) => launch(app, event.currentTarget)}
+			<ul
+				class="absolute inset-0 flex flex-wrap content-start gap-8 px-[5vw] pt-10 pb-8"
+				style:opacity={1 - Math.min(1, zoom.current * 2)}
+				style:transform="scale({1 + zoom.current * 0.06})"
+				style:transform-origin={origin}
+				inert={!!active}
+			>
+				{#each apps as app (app.id)}
+					<li>
+						<button
+							type="button"
+							class="group flex w-28 cursor-pointer flex-col items-center gap-3"
+							onclick={(event) => launch(app, event.currentTarget.firstElementChild)}
+						>
+							<span
+								class="flex size-24 items-center justify-center rounded-3xl bg-white/10 transition-colors group-active:bg-white/30"
 							>
-								<span
-									class="flex size-24 items-center justify-center rounded-3xl bg-white/10 transition-colors group-active:bg-white/30"
-								>
-									<app.icon size={40} strokeWidth={1.25} />
-								</span>
-								<span class="text-sm text-white/80">{app.name}</span>
-							</button>
-						</li>
-					{/each}
-				</ul>
+								<app.icon size={40} strokeWidth={1.25} />
+							</span>
+							<span class="text-sm text-white/80">{app.name}</span>
+						</button>
+					</li>
+				{/each}
+			</ul>
+
+			{#if shown}
+				<div class="absolute inset-0" style:clip-path={cutout} inert={!active}>
+					<!-- A surface like the tile of the icon, there only while the box is in between. -->
+					<div
+						class="absolute inset-0 bg-white/10"
+						style:opacity={Math.sin(Math.PI * zoom.current)}
+					></div>
+					<div
+						class="absolute inset-0 px-[5vw] pt-10 pb-8"
+						style:opacity={Math.max(0, zoom.current * 1.5 - 0.5)}
+						style:transform="scale({0.85 + zoom.current * 0.15})"
+						style:transform-origin={origin}
+					>
+						<shown.view {host} />
+					</div>
+				</div>
 			{/if}
 		</div>
 
