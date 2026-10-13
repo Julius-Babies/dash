@@ -161,10 +161,20 @@
 						format={TWO_DIGITS}
 					/><!-- No space before the seconds: at this size it would be a wide gap. Seconds would
 					keep the display moving at night. -->{#if !night.active}<span
-							class="ml-[0.25em] text-[0.36em] text-white/60"
+							class="ml-[0.25em] text-[0.36em] tracking-normal text-white/60"
 							transition:fade={{ duration: 400 }}
-							><NumberFlow value={now.getSeconds()} format={TWO_DIGITS} /></span
-						>{/if}
+						>
+							<!-- Ticking every second, these only cross-fade instead of rolling. -->
+							{#each String(now.getSeconds()).padStart(2, '0') as digit, i (i)}
+								<span class="inline-grid">
+									{#key digit}
+										<span class="col-start-1 row-start-1" transition:fade={{ duration: 350 }}>
+											{digit}
+										</span>
+									{/key}
+								</span>
+							{/each}
+						</span>{/if}
 				</NumberFlowGroup>
 			</time>
 			<p class="mt-[1.5vw] text-[clamp(1.25rem,2.2vw,2rem)] leading-tight font-light text-white/80">
