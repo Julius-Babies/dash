@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronLeft, X } from '@lucide/svelte';
+	import { ChevronLeft, RotateCw, X } from '@lucide/svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { Tween } from 'svelte/motion';
 	import type { AppHost, DashApp } from '#lib/apps/types.ts';
@@ -125,14 +125,24 @@
 				{/if}
 			</div>
 
-			<button
-				type="button"
-				aria-label="Schließen"
-				class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
-				onclick={() => (open = false)}
-			>
-				<X size={26} strokeWidth={1.5} />
-			</button>
+			<div class="flex gap-3">
+				<button
+					type="button"
+					aria-label="Seite neu laden"
+					class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
+					onclick={() => location.reload()}
+				>
+					<RotateCw size={24} strokeWidth={1.5} />
+				</button>
+				<button
+					type="button"
+					aria-label="Schließen"
+					class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
+					onclick={() => (open = false)}
+				>
+					<X size={26} strokeWidth={1.5} />
+				</button>
+			</div>
 		</header>
 
 		<div class="min-h-0 flex-1 px-[5vw] pt-10 pb-10">
