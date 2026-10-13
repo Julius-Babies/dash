@@ -13,8 +13,8 @@ kleine Apps, vor dem Bing-Bild des Tages.
 - **Verbindungen Golm → Griebnitzsee** mit Verspätungen und Ausfällen, über
   [v6.vbb.transport.rest](https://v6.vbb.transport.rest). Ein Tap auf eine Verbindung stellt
   einen Wecker, der 12 Minuten vor Abfahrt klingelt.
-- **App-Drawer**: Tap oder Wisch nach oben auf dem Bild. Bisher gibt es einen Timer; laufende
-  Timer erscheinen über der Uhr.
+- **App-Drawer**: Tap oder Wisch nach oben auf dem Bild. Bisher gibt es einen Timer und einen Wecker
+  mit Wochentagen; laufende Timer und Wecker der nächsten 12 Stunden erscheinen über der Uhr.
 - **Nachtmodus** von 22:00 bis 05:55: rote Schrift auf Schwarz, ohne Hintergrundbild. Lässt sich unten im
   App-Drawer von Hand umschalten und hält dann bis zum nächsten Wechsel des Zeitplans.
 
