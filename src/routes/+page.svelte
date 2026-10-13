@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
 	import Connections from '#lib/components/Connections.svelte';
+	import Weather from '#lib/components/Weather.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -22,7 +23,7 @@
 	});
 
 	$effect(() => {
-		const interval = setInterval(() => invalidate('app:journeys'), 60_000);
+		const interval = setInterval(() => invalidate('app:live'), 60_000);
 		return () => clearInterval(interval);
 	});
 </script>
@@ -46,11 +47,7 @@
 		{/if}
 	</section>
 
-	<section
-		class="flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-sm text-white/60"
-	>
-		Platzhalter
-	</section>
+	<Weather place="Potsdam" weather={data.weather} />
 
 	<Connections from="Golm" to="Griebnitzsee" journeys={data.journeys} {now} />
 </main>
