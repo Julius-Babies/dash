@@ -67,10 +67,20 @@
 						onclick={() => ontoggle(journey)}
 					>
 					<span class="flex shrink-0 items-baseline gap-1.5 tabular-nums">
-						<span class="w-12" class:line-through={journey.cancelled}>
+						<span
+							class="w-12 transition-colors duration-500"
+							class:line-through={journey.cancelled}
+							class:text-red-300={journey.delay > 0}
+						>
 							{timeFormat.format(new Date(journey.departure))}
 							{#if journey.delay > 0}
-								<sup class="text-xs font-medium text-red-300" transition:fade>+{journey.delay}</sup>
+								<!-- The time above already includes the delay; this is what it was planned as. -->
+								<span class="-mt-1 block text-[10px] leading-3 whitespace-nowrap" transition:fade>
+									<s class="text-white/40">
+										{timeFormat.format(new Date(journey.departure).getTime() - journey.delay * 60_000)}
+									</s>
+									+{journey.delay}
+								</span>
 							{/if}
 						</span>
 						<span class="text-xs text-white/30">→</span>
@@ -91,7 +101,7 @@
 							</span>
 						{/each}
 						{#if journey.platform}
-							<span class="ml-1 truncate text-sm text-white/50">Gl. {journey.platform}</span>
+							<span class="ml-1 shrink-0 text-sm text-white/50">Gl. {journey.platform}</span>
 						{/if}
 					</span>
 
