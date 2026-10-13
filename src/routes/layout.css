@@ -5,7 +5,7 @@
 }
 
 @utility panel {
-	@apply flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-black/25 p-7 backdrop-blur-xl;
+	@apply flex flex-col overflow-hidden px-10 py-9;
 }
 
 @utility panel-title {

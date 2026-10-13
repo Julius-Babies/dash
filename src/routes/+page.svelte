@@ -40,9 +40,9 @@
 <svelte:document onclick={toggleFullscreen} />
 
 <main
-	class="grid h-dvh grid-rows-[auto_1fr_1fr] gap-8 p-[5vw] text-white md:grid-cols-[1fr_minmax(0,36rem)] md:grid-rows-2"
+	class="grid h-dvh grid-rows-[auto_1fr] text-white md:grid-cols-[1fr_minmax(0,38rem)] md:grid-rows-1"
 >
-	<section class="flex flex-col justify-end select-none md:row-span-2">
+	<section class="flex flex-col justify-end p-[5vw] select-none">
 		{#if now}
 			<time
 				datetime={now.toISOString()}
@@ -56,7 +56,10 @@
 		{/if}
 	</section>
 
-	<Weather place="Potsdam" weather={data.weather} />
-
-	<Connections from="Golm" to="Griebnitzsee" journeys={data.journeys} {now} />
+	<aside
+		class="grid min-h-0 grid-rows-2 divide-y divide-white/10 border-white/10 bg-black/35 backdrop-blur-2xl max-md:border-t md:border-l"
+	>
+		<Weather place="Potsdam" weather={data.weather} />
+		<Connections from="Golm" to="Griebnitzsee" journeys={data.journeys} {now} />
+	</aside>
 </main>
