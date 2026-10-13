@@ -1,11 +1,15 @@
 <script lang="ts">
-	import { X } from '@lucide/svelte';
+	import { ChevronLeft, X } from '@lucide/svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { Tween } from 'svelte/motion';
+	import type { AppHost, DashApp } from '#lib/apps/types.ts';
 
-	type Props = { open: boolean; now?: Date };
+	type Props = { open: boolean; now?: Date; apps: DashApp[]; host: AppHost };
 
-	let { open = $bindable(), now }: Props = $props();
+	let { open = $bindable(), now, apps, host }: Props = $props();
+
+	// The app that is open; the launcher shows while there is none.
+	let active = $state<DashApp>();
 
 	// Closes itself after this long without a touch or key press.
 	const IDLE_TIMEOUT = 2 * 60_000;
@@ -31,6 +35,11 @@
 		offset.target = open ? 0 : 1;
 	});
 
+	// Start from the launcher again next time, but only once the sheet is out of sight.
+	$effect(() => {
+		if (!open && offset.current >= 1) active = undefined;
+	});
+
 	$effect(() => {
 		if (!open) return;
 		void interactions;
@@ -40,6 +49,8 @@
 
 	function onpointerdown(event: PointerEvent) {
 		interactions++;
+		// Apps mark areas that handle swipes themselves, such as scrolling lists.
+		if (event.target instanceof Element && event.target.closest('[data-no-drag]')) return;
 		dragStart = event.clientY;
 	}
 
@@ -90,7 +101,17 @@
 		<div class="mx-auto mt-3 h-1 w-12 rounded-full bg-white/25"></div>
 
 		<header class="flex items-center justify-between px-[5vw] pt-8">
-			<div class="flex items-baseline gap-5">
+			<div class="flex items-center gap-5">
+				{#if active}
+					<button
+						type="button"
+						aria-label="Zurück zu den Apps"
+						class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
+						onclick={() => (active = undefined)}
+					>
+						<ChevronLeft size={28} strokeWidth={1.5} />
+					</button>
+				{/if}
 				{#if now}
 					<time datetime={now.toISOString()} class="font-mono text-5xl font-extralight tracking-[-0.09em]">
 						{#each timeFormat.format(now).split(':') as part, i (i)}
@@ -98,18 +119,45 @@
 							{#if i > 0}<span class="-mx-[0.14em]">:</span>{/if}{part}
 						{/each}
 					</time>
-					<p class="text-xl font-light text-white/60">{dateFormat.format(now)}</p>
+					<p class="self-end pb-1 text-xl font-light text-white/60">
+						{active ? active.name : dateFormat.format(now)}
+					</p>
 				{/if}
 			</div>
 
 			<button
 				type="button"
 				aria-label="Schließen"
-				class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+				class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
 				onclick={() => (open = false)}
 			>
 				<X size={26} strokeWidth={1.5} />
 			</button>
 		</header>
+
+		<div class="min-h-0 flex-1 px-[5vw] pt-10 pb-10">
+			{#if active}
+				<active.view {host} />
+			{:else}
+				<ul class="flex flex-wrap gap-8">
+					{#each apps as app (app.id)}
+						<li>
+							<button
+								type="button"
+								class="group flex w-28 cursor-pointer flex-col items-center gap-3"
+								onclick={() => (active = app)}
+							>
+								<span
+									class="flex size-24 items-center justify-center rounded-3xl bg-white/10 transition-colors group-active:bg-white/30"
+								>
+									<app.icon size={40} strokeWidth={1.25} />
+								</span>
+								<span class="text-sm text-white/80">{app.name}</span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
 	</div>
 {/if}

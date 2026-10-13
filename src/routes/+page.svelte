@@ -1,10 +1,13 @@
 <script lang="ts">
-	import { BellRing } from '@lucide/svelte';
 	import NumberFlow, { NumberFlowGroup } from '@number-flow/svelte';
 	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { invalidate } from '$app/navigation';
 	import { page } from '$app/state';
+	import { alerts } from '#lib/alerts.svelte.ts';
+	import { apps } from '#lib/apps/index.ts';
+	import type { AppHost } from '#lib/apps/types.ts';
+	import AlertOverlay from '#lib/components/AlertOverlay.svelte';
 	import Connections from '#lib/components/Connections.svelte';
 	import Drawer from '#lib/components/Drawer.svelte';
 	import Weather from '#lib/components/Weather.svelte';
@@ -37,7 +40,7 @@
 		if (!fullscreenDisabled && !document.fullscreenElement) {
 			document.documentElement.requestFullscreen();
 		}
-		unlockSound();
+		alerts.unlock();
 	}
 
 	// How far up a swipe on the image has to travel to open the drawer.
@@ -45,6 +48,16 @@
 
 	let drawerOpen = $state(false);
 	let swipeStart: number | undefined;
+
+	const host: AppHost = {
+		goHome: () => (drawerOpen = false),
+		alert: alerts.ring
+	};
+
+	onMount(() => {
+		const stops = apps.map((app) => app.start?.(host));
+		return () => stops.forEach((stop) => stop?.());
+	});
 
 	function onswipemove(event: PointerEvent) {
 		if (swipeStart === undefined || swipeStart - event.clientY < SWIPE_OPEN) return;
@@ -58,10 +71,6 @@
 	const ALARM_STORAGE = 'dash:alarms';
 
 	const alarms = new SvelteMap<string, Journey>();
-	let ringing = $state<Journey>();
-	let audioContext: AudioContext | undefined;
-	let alarmBuffer: Promise<AudioBuffer> | undefined;
-	let alarmSource: AudioBufferSourceNode | undefined;
 	// Keeps the first save from wiping the stored alarms before they were read.
 	let restored = $state(false);
 
@@ -81,46 +90,8 @@
 		if (restored) localStorage.setItem(ALARM_STORAGE, JSON.stringify([...alarms.values()]));
 	});
 
-	function getAudioContext() {
-		const context = (audioContext ??= new AudioContext());
-		alarmBuffer ??= fetch('/alarm.mp3')
-			.then((res) => res.arrayBuffer())
-			.then((data) => context.decodeAudioData(data));
-		return context;
-	}
-
-	// Unless the browser is set up to allow autoplay, an audio context stays suspended until
-	// it is resumed from a tap. Resuming makes no sound itself, and an alarm that is already
-	// ringing silently becomes audible.
-	function unlockSound() {
-		getAudioContext()
-			.resume()
-			.catch(() => {});
-	}
-
-	async function startSound() {
-		const context = getAudioContext();
-		// Without a tap so far this stays pending; the source below then waits for `unlockSound`.
-		context.resume().catch(() => {});
-		const buffer = await alarmBuffer!;
-		if (!ringing || alarmSource) return;
-		alarmSource = new AudioBufferSourceNode(context, { buffer, loop: true });
-		alarmSource.connect(context.destination);
-		alarmSource.start();
-	}
-
-	function stopSound() {
-		alarmSource?.stop();
-		alarmSource = undefined;
-	}
-
 	function toggleAlarm(journey: Journey) {
 		if (!alarms.delete(journey.id)) alarms.set(journey.id, journey);
-	}
-
-	function dismissAlarm() {
-		ringing = undefined;
-		stopSound();
 	}
 
 	$effect(() => {
@@ -130,8 +101,12 @@
 			const journey = data.journeys?.find((j) => j.id === id) ?? stored;
 			if (now.getTime() < new Date(journey.departure).getTime() - ALARM_LEAD * 60_000) continue;
 			alarms.delete(id);
-			ringing = journey;
-			startSound().catch((error) => console.error('Failed to play alarm sound', error));
+			const lines = journey.lines.map((line) => line.name).join(' › ');
+			const platform = journey.platform ? ` · Gleis ${journey.platform}` : '';
+			alerts.ring({
+				title: 'Zeit zu gehen',
+				detail: `${lines} um ${timeFormat.format(new Date(journey.departure))}${platform}`
+			});
 		}
 	});
 
@@ -161,6 +136,10 @@
 			onpointerup={() => (swipeStart = undefined)}
 			onpointercancel={() => (swipeStart = undefined)}
 		></button>
+		<!-- Live activities of the apps sit above the clock. -->
+		{#each apps as app (app.id)}
+			{#if app.activity}<app.activity />{/if}
+		{/each}
 		{#if now}
 			<time
 				datetime={now.toISOString()}
@@ -195,30 +174,6 @@
 	</aside>
 </main>
 
-<Drawer bind:open={drawerOpen} {now} />
+<Drawer bind:open={drawerOpen} {now} {apps} {host} />
 
-{#if ringing}
-	<div
-		role="alertdialog"
-		aria-modal="true"
-		aria-labelledby="alarm-title"
-		class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-12 bg-black/80 text-white backdrop-blur-2xl"
-	>
-		<BellRing size={72} strokeWidth={1} class="animate-pulse" />
-		<div class="text-center">
-			<h2 id="alarm-title" class="text-6xl font-light">Zeit zu gehen</h2>
-			<p class="mt-5 text-2xl font-light text-white/70">
-				{ringing.lines.map((line) => line.name).join(' › ')} um
-				{timeFormat.format(new Date(ringing.departure))}
-				{#if ringing.platform}· Gleis {ringing.platform}{/if}
-			</p>
-		</div>
-		<button
-			type="button"
-			class="cursor-pointer rounded-full bg-white px-20 py-5 text-2xl font-medium text-black"
-			onclick={dismissAlarm}
-		>
-			OK
-		</button>
-	</div>
-{/if}
+<AlertOverlay />
