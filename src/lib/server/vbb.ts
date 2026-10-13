@@ -3,6 +3,8 @@ const TTL = 30 * 1000;
 const PAGES = 2;
 
 export type Journey = {
+	/** Stable across refreshes, unlike `departure`, which moves with delays. */
+	id: string;
 	departure: string;
 	arrival: string;
 	/** Departure delay in minutes. */
@@ -56,6 +58,7 @@ export async function getJourneys(from: string, to: string, fetch = globalThis.f
 		const first = rides[0];
 		const last = rides[rides.length - 1];
 		return {
+			id: [first.plannedDeparture, ...rides.map((leg) => leg.line.name)].join('|'),
 			// Cancelled legs have no realtime times, only planned ones.
 			departure: first.departure ?? first.plannedDeparture,
 			arrival: last.arrival ?? last.plannedArrival,

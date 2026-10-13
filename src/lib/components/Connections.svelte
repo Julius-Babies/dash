@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Bell } from '@lucide/svelte';
 	import type { Journey } from '#lib/server/vbb.ts';
 
 	type Props = {
@@ -6,9 +7,12 @@
 		to: string;
 		journeys: Journey[] | null;
 		now?: Date;
+		/** Journeys with an alarm set, keyed by id. */
+		alarms: ReadonlyMap<string, Journey>;
+		ontoggle: (journey: Journey) => void;
 	};
 
-	let { from, to, journeys, now }: Props = $props();
+	let { from, to, journeys, now, alarms, ontoggle }: Props = $props();
 
 	const timeFormat = new Intl.DateTimeFormat('de-DE', {
 		hour: '2-digit',
@@ -36,9 +40,19 @@
 	{:else if upcoming.length === 0}
 		<p class="m-auto text-sm text-white/60">Keine Verbindungen gefunden</p>
 	{:else}
-		<ul class="flex flex-col gap-3">
-			{#each upcoming as journey (journey.departure + journey.lines.map((l) => l.name).join())}
-				<li class="flex items-center gap-4 leading-6" class:opacity-50={journey.cancelled}>
+		<ul class="-mx-3 flex flex-col gap-0.5">
+			{#each upcoming as journey (journey.id)}
+				{@const armed = alarms.has(journey.id)}
+				<li class:opacity-50={journey.cancelled}>
+					<button
+						type="button"
+						aria-pressed={armed}
+						aria-label="Wecker für {timeFormat.format(new Date(journey.departure))} Uhr"
+						class="flex w-full cursor-pointer items-center gap-4 rounded-xl px-3 py-[5px] text-left leading-6 {armed
+							? 'bg-white/10'
+							: ''}"
+						onclick={() => ontoggle(journey)}
+					>
 					<span class="flex shrink-0 items-baseline gap-1.5 tabular-nums">
 						<span class="w-12" class:line-through={journey.cancelled}>
 							{timeFormat.format(new Date(journey.departure))}
@@ -68,13 +82,15 @@
 						{/if}
 					</span>
 
-					<span class="shrink-0 text-right text-sm text-white/80">
+					<span class="flex shrink-0 items-center gap-2 text-right text-sm text-white/80">
+						{#if armed}<Bell size={14} strokeWidth={1.75} class="text-amber-200" />{/if}
 						{#if journey.cancelled}
 							<span class="text-red-300">Fällt aus</span>
 						{:else if now}
 							{countdown(journey.departure, now)}
 						{/if}
 					</span>
+					</button>
 				</li>
 			{/each}
 		</ul>
