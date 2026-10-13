@@ -12,3 +12,18 @@
 @utility panel-title {
 	@apply mb-6 text-sm text-white/50;
 }
+
+/* Night mode: everything that is white or tinted by day turns into one dim red. */
+.night {
+	--color-white: #d92b1f;
+	--color-sky-200: var(--color-white);
+	--color-sky-300: var(--color-white);
+	--color-amber-200: var(--color-white);
+	--color-red-300: var(--color-white);
+}
+
+/* Line badges carry the colours of the transport network inline. */
+.night [data-line] {
+	color: var(--color-white) !important;
+	background-color: color-mix(in oklab, var(--color-white) 20%, transparent) !important;
+}

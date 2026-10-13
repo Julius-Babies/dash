@@ -106,6 +106,7 @@
 						{#each journey.lines as line, i (i)}
 							{#if i > 0}<span class="text-white/30">›</span>{/if}
 							<span
+								data-line
 								class="rounded-full bg-white/15 px-2 py-0.5 leading-none font-medium"
 								style:color={line.fg}
 								style:background-color={line.bg}

@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { ChevronLeft, RotateCw, X } from '@lucide/svelte';
+	import { ChevronLeft, Moon, RotateCw, X } from '@lucide/svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { Tween } from 'svelte/motion';
 	import type { AppHost, DashApp } from '#lib/apps/types.ts';
+	import { night } from '#lib/night.svelte.ts';
 
 	type Props = { open: boolean; now?: Date; apps: DashApp[]; host: AppHost };
 
@@ -145,7 +146,7 @@
 			</div>
 		</header>
 
-		<div class="min-h-0 flex-1 px-[5vw] pt-10 pb-10">
+		<div class="min-h-0 flex-1 px-[5vw] pt-10 pb-8">
 			{#if active}
 				<active.view {host} />
 			{:else}
@@ -169,5 +170,26 @@
 				</ul>
 			{/if}
 		</div>
+
+		<!-- Quick controls -->
+		<footer class="flex gap-3 border-t border-white/10 px-[5vw] py-5">
+			<button
+				type="button"
+				aria-pressed={night.active}
+				class={[
+					'flex h-16 cursor-pointer items-center gap-4 rounded-full pr-7 pl-5 transition-colors',
+					night.active ? 'bg-white/25 active:bg-white/35' : 'bg-white/10 active:bg-white/30'
+				]}
+				onclick={night.toggle}
+			>
+				<Moon size={26} strokeWidth={1.5} />
+				<span class="flex flex-col items-start leading-tight">
+					<span>Nachtmodus</span>
+					<span class="text-sm text-white/50">
+						{night.active ? `An bis ${night.end}` : `Aus bis ${night.start}`}
+					</span>
+				</span>
+			</button>
+		</footer>
 	</div>
 {/if}

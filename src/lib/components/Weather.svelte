@@ -148,8 +148,8 @@
 					<svg {width} height={TEMP_HEIGHT} class="block overflow-visible">
 						<defs>
 							<linearGradient id="{uid}-fill" x1="0" y1="0" x2="0" y2="1">
-								<stop offset="0" stop-color="white" stop-opacity="0.16" />
-								<stop offset="1" stop-color="white" stop-opacity="0" />
+								<stop offset="0" stop-color="currentColor" stop-opacity="0.16" />
+								<stop offset="1" stop-color="currentColor" stop-opacity="0" />
 							</linearGradient>
 							<clipPath id="{uid}-past">
 								<rect x="0" y="-8" width={nowX ?? 0} height={TEMP_HEIGHT + 8} />
