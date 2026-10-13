@@ -1,4 +1,10 @@
 <script lang="ts">
+	import { invalidate } from '$app/navigation';
+	import Connections from '#lib/components/Connections.svelte';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+
 	const timeFormat = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
 	const dateFormat = new Intl.DateTimeFormat('de-DE', {
 		weekday: 'long',
@@ -12,6 +18,11 @@
 	$effect(() => {
 		now = new Date();
 		const interval = setInterval(() => (now = new Date()), 1000);
+		return () => clearInterval(interval);
+	});
+
+	$effect(() => {
+		const interval = setInterval(() => invalidate('app:journeys'), 60_000);
 		return () => clearInterval(interval);
 	});
 </script>
@@ -35,11 +46,11 @@
 		{/if}
 	</section>
 
-	{#each [1, 2] as n (n)}
-		<section
-			class="flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-sm text-white/60"
-		>
-			Platzhalter {n}
-		</section>
-	{/each}
+	<section
+		class="flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-sm text-white/60"
+	>
+		Platzhalter
+	</section>
+
+	<Connections from="Golm" to="Griebnitzsee" journeys={data.journeys} {now} />
 </main>
