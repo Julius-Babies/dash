@@ -91,7 +91,7 @@
 		aria-modal="true"
 		aria-label="Apps"
 		tabindex="-1"
-		class="fixed inset-0 z-40 flex touch-none flex-col bg-black/60 text-white backdrop-blur-2xl select-none"
+		class="fixed inset-0 z-40 flex touch-none flex-col bg-black/60 text-white backdrop-blur-2xl select-none night:bg-black night:backdrop-blur-none"
 		style:transform="translateY(calc({offset.current * 100}% + {drag}px))"
 		bind:clientHeight={height}
 		{onpointerdown}

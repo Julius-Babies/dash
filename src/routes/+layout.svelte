@@ -23,10 +23,7 @@
 	<img
 		src={data.wallpaper.url}
 		alt=""
-		class={[
-			'fixed inset-0 -z-10 h-full w-full object-cover transition-[filter] duration-1000',
-			night.active ? 'brightness-[0.12] grayscale' : 'brightness-50'
-		]}
+		class="fixed inset-0 -z-10 h-full w-full object-cover brightness-50 transition-opacity duration-1000 night:opacity-0"
 	/>
 {/if}
 

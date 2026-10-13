@@ -15,7 +15,7 @@ kleine Apps, vor dem Bing-Bild des Tages.
   einen Wecker, der 12 Minuten vor Abfahrt klingelt.
 - **App-Drawer**: Tap oder Wisch nach oben auf dem Bild. Bisher gibt es einen Timer; laufende
   Timer erscheinen über der Uhr.
-- **Nachtmodus** von 22:00 bis 05:55: abgedunkeltes Bild, rote Schrift. Lässt sich unten im
+- **Nachtmodus** von 22:00 bis 05:55: rote Schrift auf Schwarz, ohne Hintergrundbild. Lässt sich unten im
   App-Drawer von Hand umschalten und hält dann bis zum nächsten Wechsel des Zeitplans.
 
 Wecker und Timer werden im Browser gespeichert und überstehen ein Neuladen.

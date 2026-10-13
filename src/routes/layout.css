@@ -5,6 +5,8 @@
 	--font-mono: 'Geist Mono', ui-monospace, monospace;
 }
 
+@custom-variant night (&:where(.night, .night *));
+
 @utility panel {
 	@apply flex flex-col overflow-hidden px-10 py-9;
 }
@@ -13,8 +15,10 @@
 	@apply mb-6 text-sm text-white/50;
 }
 
-/* Night mode: everything that is white or tinted by day turns into one dim red. */
+/* Night mode: everything that is white or tinted by day turns into one dim red, on plain black
+   so that an OLED panel stays dark. */
 .night {
+	background: black;
 	--color-white: #d92b1f;
 	--color-sky-200: var(--color-white);
 	--color-sky-300: var(--color-white);

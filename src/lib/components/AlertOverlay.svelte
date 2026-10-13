@@ -8,7 +8,7 @@
 		role="alertdialog"
 		aria-modal="true"
 		aria-labelledby="alert-title"
-		class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-12 bg-black/80 text-white backdrop-blur-2xl"
+		class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-12 bg-black/80 text-white backdrop-blur-2xl night:bg-black night:backdrop-blur-none"
 	>
 		<BellRing size={72} strokeWidth={1} class="animate-pulse" />
 		<div class="text-center">
