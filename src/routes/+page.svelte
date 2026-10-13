@@ -46,7 +46,7 @@
 		{#if now}
 			<time
 				datetime={now.toISOString()}
-				class="block text-[clamp(5rem,13vw,11rem)] leading-none font-extralight tracking-tight tabular-nums"
+				class="block text-[clamp(5rem,13vw,11rem)] font-mono leading-none font-extralight tracking-tighter"
 			>
 				{timeFormat.format(now)}
 			</time>
@@ -59,7 +59,7 @@
 	<aside
 		class="grid min-h-0 grid-rows-2 divide-y divide-white/10 border-white/10 bg-black/35 backdrop-blur-2xl max-md:border-t md:border-l"
 	>
-		<Weather place="Potsdam" weather={data.weather} />
+		<Weather place="Potsdam" weather={data.weather} {now} />
 		<Connections from="Golm" to="Griebnitzsee" journeys={data.journeys} {now} />
 	</aside>
 </main>
