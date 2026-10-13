@@ -3,3 +3,11 @@
 @theme {
 	--font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
 }
+
+@utility panel {
+	@apply flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-black/25 p-7 backdrop-blur-xl;
+}
+
+@utility panel-title {
+	@apply mb-6 text-sm text-white/50;
+}

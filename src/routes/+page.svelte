@@ -22,6 +22,11 @@
 		return () => clearInterval(interval);
 	});
 
+	function toggleFullscreen() {
+		if (document.fullscreenElement) document.exitFullscreen();
+		else document.documentElement.requestFullscreen();
+	}
+
 	$effect(() => {
 		const interval = setInterval(() => invalidate('app:live'), 60_000);
 		return () => clearInterval(interval);
@@ -32,16 +37,20 @@
 	<title>Dash</title>
 </svelte:head>
 
-<main class="grid h-dvh grid-rows-[auto_1fr_1fr] gap-6 p-[5vw] text-white md:grid-cols-2 md:grid-rows-2">
+<svelte:document onclick={toggleFullscreen} />
+
+<main
+	class="grid h-dvh grid-rows-[auto_1fr_1fr] gap-8 p-[5vw] text-white md:grid-cols-[1fr_minmax(0,36rem)] md:grid-rows-2"
+>
 	<section class="flex flex-col justify-end select-none md:row-span-2">
 		{#if now}
 			<time
 				datetime={now.toISOString()}
-				class="block text-[clamp(5rem,13vw,11rem)] leading-none font-light tabular-nums"
+				class="block text-[clamp(5rem,13vw,11rem)] leading-none font-extralight tracking-tight tabular-nums"
 			>
 				{timeFormat.format(now)}
 			</time>
-			<p class="mt-[1vw] text-[clamp(1.25rem,2.5vw,2.25rem)] leading-tight font-light">
+			<p class="mt-[1.5vw] text-[clamp(1.25rem,2.2vw,2rem)] leading-tight font-light text-white/80">
 				{dateFormat.format(now)}
 			</p>
 		{/if}

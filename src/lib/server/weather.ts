@@ -73,7 +73,7 @@ export async function getWeather(
 	const { hourly, daily } = await getForecast(latitude, longitude, fetch);
 	const now = Date.now();
 	return {
-		hourly: hourly.filter((hour) => hour.time + HOUR > now).slice(0, 8),
+		hourly: hourly.filter((hour) => hour.time + HOUR > now).slice(0, 6),
 		daily: daily.filter((day) => day.time > now).slice(0, 3)
 	};
 }
