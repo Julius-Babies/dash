@@ -6,10 +6,10 @@
 </script>
 
 {#if timers.list.length > 0}
-	<ul class="mb-[2vw] flex flex-wrap gap-3">
+	<ul class="contents">
 		{#each timers.sorted as timer (timer.id)}
 			<li
-				class="flex items-center gap-3 rounded-full bg-black/40 py-2.5 pr-6 pl-4 backdrop-blur-xl transition-colors {timer.endsAt ===
+				class="mb-[2vw] flex h-14 items-center gap-3 rounded-full bg-black/40 py-2.5 pr-6 pl-4 backdrop-blur-xl transition-colors {timer.endsAt ===
 				null
 					? 'text-white/50'
 					: ''}"

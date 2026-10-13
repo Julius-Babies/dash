@@ -10,6 +10,7 @@
 	import AlertOverlay from '#lib/components/AlertOverlay.svelte';
 	import Connections from '#lib/components/Connections.svelte';
 	import Drawer from '#lib/components/Drawer.svelte';
+	import NightActivity from '#lib/components/NightActivity.svelte';
 	import Weather from '#lib/components/Weather.svelte';
 	import type { Journey } from '#lib/server/vbb.ts';
 	import type { PageProps } from './$types';
@@ -137,9 +138,12 @@
 			onpointercancel={() => (swipeStart = undefined)}
 		></button>
 		<!-- Live activities of the apps sit above the clock. -->
-		{#each apps as app (app.id)}
-			{#if app.activity}<app.activity />{/if}
-		{/each}
+		<div class="flex flex-wrap gap-x-3">
+			<NightActivity />
+			{#each apps as app (app.id)}
+				{#if app.activity}<app.activity />{/if}
+			{/each}
+		</div>
 		{#if now}
 			<time
 				datetime={now.toISOString()}

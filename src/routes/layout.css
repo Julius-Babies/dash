@@ -15,10 +15,14 @@
 	@apply mb-6 text-sm text-white/50;
 }
 
+/* Black behind the wallpaper, so that it fades in from dark. */
+html {
+	background: black;
+}
+
 /* Night mode: everything that is white or tinted by day turns into one dim red, on plain black
    so that an OLED panel stays dark. */
 .night {
-	background: black;
 	--color-white: #d92b1f;
 	--color-sky-200: var(--color-white);
 	--color-sky-300: var(--color-white);
