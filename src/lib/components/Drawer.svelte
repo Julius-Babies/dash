@@ -2,6 +2,7 @@
 	import { ChevronLeft, Moon, RotateCw, X } from '@lucide/svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { Tween } from 'svelte/motion';
+	import { fade, slide } from 'svelte/transition';
 	import type { AppHost, DashApp } from '#lib/apps/types.ts';
 	import { night } from '#lib/night.svelte.ts';
 
@@ -17,6 +18,8 @@
 	// How far a swipe has to travel before it counts as dragging, and before it closes.
 	const DRAG_START = 8;
 	const CLOSE_DISTANCE = 120;
+	// How long an app takes to grow out of its icon, or to shrink back into it.
+	const APP_ZOOM = 380;
 	// How long after closing the sheet a tap on the night mode control takes effect.
 	const NIGHT_DELAY = 1000;
 
@@ -78,6 +81,29 @@
 		else offset.target = 0;
 	}
 
+	// Where the icon of the app sits within the content area: apps grow out of this point.
+	let content = $state<HTMLElement>();
+	let origin = $state('50% 50%');
+
+	function launch(app: DashApp, icon: HTMLElement) {
+		if (content) {
+			const area = content.getBoundingClientRect();
+			const box = icon.getBoundingClientRect();
+			origin = `${box.left + box.width / 2 - area.left}px ${box.top + box.height / 2 - area.top}px`;
+		}
+		active = app;
+	}
+
+	// The app grows out of its icon while the launcher zooms past the viewer, and back.
+	function zoom(_node: Element, { from }: { from: number }) {
+		return {
+			duration: APP_ZOOM,
+			easing: cubicOut,
+			css: (t: number) =>
+				`opacity: ${t}; transform: scale(${from + (1 - from) * t}); transform-origin: ${origin}`
+		};
+	}
+
 	// Night mode switches once the sheet is out of the way, so the change is seen on the home screen.
 	function toggleNight() {
 		open = false;
@@ -110,16 +136,18 @@
 		<div class="mx-auto mt-3 h-1 w-12 rounded-full bg-white/25"></div>
 
 		<header class="flex items-center justify-between px-[5vw] pt-8">
-			<div class="flex items-center gap-5">
+			<div class="flex items-center">
 				{#if active}
-					<button
-						type="button"
-						aria-label="Zurück zu den Apps"
-						class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
-						onclick={() => (active = undefined)}
-					>
-						<ChevronLeft size={28} strokeWidth={1.5} />
-					</button>
+					<div class="pr-5" transition:slide={{ axis: 'x', duration: APP_ZOOM }}>
+						<button
+							type="button"
+							aria-label="Zurück zu den Apps"
+							class="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors active:bg-white/30"
+							onclick={() => (active = undefined)}
+						>
+							<ChevronLeft size={28} strokeWidth={1.5} />
+						</button>
+					</div>
 				{/if}
 				{#if now}
 					<time datetime={now.toISOString()} class="font-mono text-5xl font-extralight tracking-[-0.09em]">
@@ -128,9 +156,14 @@
 							{#if i > 0}<span class="-mx-[0.14em]">:</span>{/if}{part}
 						{/each}
 					</time>
-					<p class="self-end pb-1 text-xl font-light text-white/60">
-						{active ? active.name : dateFormat.format(now)}
-					</p>
+					{#key active}
+						<p
+							class="ml-5 self-end pb-1 text-xl font-light whitespace-nowrap text-white/60"
+							in:fade={{ duration: APP_ZOOM }}
+						>
+							{active ? active.name : dateFormat.format(now)}
+						</p>
+					{/key}
 				{/if}
 			</div>
 
@@ -154,17 +187,23 @@
 			</div>
 		</header>
 
-		<div class="min-h-0 flex-1 px-[5vw] pt-10 pb-8">
+		<!-- App and launcher overlap while one zooms into the other. -->
+		<div class="relative min-h-0 flex-1 overflow-hidden" bind:this={content}>
 			{#if active}
-				<active.view {host} />
+				<div class="absolute inset-0 px-[5vw] pt-10 pb-8" transition:zoom={{ from: 0.4 }}>
+					<active.view {host} />
+				</div>
 			{:else}
-				<ul class="flex flex-wrap gap-8">
+				<ul
+					class="absolute inset-0 flex flex-wrap content-start gap-8 px-[5vw] pt-10 pb-8"
+					transition:zoom={{ from: 1.25 }}
+				>
 					{#each apps as app (app.id)}
 						<li>
 							<button
 								type="button"
 								class="group flex w-28 cursor-pointer flex-col items-center gap-3"
-								onclick={() => (active = app)}
+								onclick={(event) => launch(app, event.currentTarget)}
 							>
 								<span
 									class="flex size-24 items-center justify-center rounded-3xl bg-white/10 transition-colors group-active:bg-white/30"
