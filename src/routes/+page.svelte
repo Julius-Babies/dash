@@ -20,15 +20,26 @@
 	<title>Dash</title>
 </svelte:head>
 
-{#if now}
-	<div
-		class="fixed bottom-[12vh] left-[5vw] text-white select-none"
-	>
-		<time datetime={now.toISOString()} class="block text-[clamp(5rem,13vw,11rem)] leading-none font-light tabular-nums">
-			{timeFormat.format(now)}
-		</time>
-		<p class="mt-[1vw] text-[clamp(1.75rem,4vw,3.5rem)] leading-tight font-light">
-			{dateFormat.format(now)}
-		</p>
-	</div>
-{/if}
+<main class="grid h-dvh grid-rows-[auto_1fr_1fr] gap-6 p-[5vw] text-white md:grid-cols-2 md:grid-rows-2">
+	<section class="flex flex-col justify-end select-none md:row-span-2">
+		{#if now}
+			<time
+				datetime={now.toISOString()}
+				class="block text-[clamp(5rem,13vw,11rem)] leading-none font-light tabular-nums"
+			>
+				{timeFormat.format(now)}
+			</time>
+			<p class="mt-[1vw] text-[clamp(1.25rem,2.5vw,2.25rem)] leading-tight font-light">
+				{dateFormat.format(now)}
+			</p>
+		{/if}
+	</section>
+
+	{#each [1, 2] as n (n)}
+		<section
+			class="flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-sm text-white/60"
+		>
+			Platzhalter {n}
+		</section>
+	{/each}
+</main>
