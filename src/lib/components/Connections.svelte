@@ -41,11 +41,17 @@
 		<ul class="flex flex-1 flex-col justify-between">
 			{#each upcoming as journey (journey.departure + journey.lines.map((l) => l.name).join())}
 				<li class="flex items-center gap-4" class:opacity-50={journey.cancelled}>
-					<span class="w-24 shrink-0 text-2xl tabular-nums" class:line-through={journey.cancelled}>
-						{timeFormat.format(new Date(journey.departure))}
-						{#if journey.delay > 0}
-							<sup class="text-xs font-medium text-red-300">+{journey.delay}</sup>
-						{/if}
+					<span class="flex shrink-0 items-baseline gap-2 text-2xl tabular-nums">
+						<span class="w-[4.5rem]" class:line-through={journey.cancelled}>
+							{timeFormat.format(new Date(journey.departure))}
+							{#if journey.delay > 0}
+								<sup class="text-xs font-medium text-red-300">+{journey.delay}</sup>
+							{/if}
+						</span>
+						<span class="text-base text-white/40">→</span>
+						<span class="w-[4.5rem] text-white/70" class:line-through={journey.cancelled}>
+							{timeFormat.format(new Date(journey.arrival))}
+						</span>
 					</span>
 
 					<span class="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
@@ -64,14 +70,11 @@
 						{/if}
 					</span>
 
-					<span class="shrink-0 text-right text-sm">
+					<span class="shrink-0 text-right font-medium">
 						{#if journey.cancelled}
-							<span class="font-medium text-red-300">Fällt aus</span>
-						{:else}
-							{#if now}<span class="block">{countdown(journey.departure, now)}</span>{/if}
-							<span class="block text-white/60 tabular-nums">
-								an {timeFormat.format(new Date(journey.arrival))}
-							</span>
+							<span class="text-red-300">Fällt aus</span>
+						{:else if now}
+							{countdown(journey.departure, now)}
 						{/if}
 					</span>
 				</li>
