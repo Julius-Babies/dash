@@ -2,6 +2,7 @@
 	import NumberFlow, { NumberFlowGroup } from '@number-flow/svelte';
 	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
+	import { fade } from 'svelte/transition';
 	import { invalidate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { alerts } from '#lib/alerts.svelte.ts';
@@ -155,7 +156,15 @@
 					<!-- The colon sits in a full-width cell; pull its neighbours in. -->
 					<NumberFlow value={now.getHours()} format={TWO_DIGITS} /><span class="-mx-[0.14em]"
 						>:</span
-					><NumberFlow value={now.getMinutes()} format={TWO_DIGITS} />
+					><NumberFlow
+						value={now.getMinutes()}
+						format={TWO_DIGITS}
+					/><!-- No space before the seconds: at this size it would be a wide gap. Seconds would
+					keep the display moving at night. -->{#if !night.active}<span
+							class="ml-[0.25em] text-[0.36em] text-white/60"
+							transition:fade={{ duration: 400 }}
+							><NumberFlow value={now.getSeconds()} format={TWO_DIGITS} /></span
+						>{/if}
 				</NumberFlowGroup>
 			</time>
 			<p class="mt-[1.5vw] text-[clamp(1.25rem,2.2vw,2rem)] leading-tight font-light text-white/80">
