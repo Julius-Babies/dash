@@ -26,12 +26,28 @@ type Leg = {
 	line: { name: string; color?: { fg: string; bg: string } };
 };
 
-const cache = new Map<string, { journeys: Journey[]; fetchedAt: number }>();
+export type Journeys = { journeys: Journey[]; fetchedAt: number };
 
+const cache = new Map<string, Journeys>();
+
+/** Falls back to the last successful result when VBB fails, which it regularly does with a 503. */
 export async function getJourneys(from: string, to: string, fetch = globalThis.fetch) {
 	const key = `${from}-${to}`;
 	const cached = cache.get(key);
-	if (cached && Date.now() - cached.fetchedAt < TTL) return cached.journeys;
+	if (cached && Date.now() - cached.fetchedAt < TTL) return cached;
+
+	try {
+		const result = { journeys: await fetchJourneys(from, to, fetch), fetchedAt: Date.now() };
+		cache.set(key, result);
+		return result;
+	} catch (error) {
+		if (!cached) throw error;
+		console.warn('Serving cached journeys', error);
+		return cached;
+	}
+}
+
+async function fetchJourneys(from: string, to: string, fetch: typeof globalThis.fetch) {
 
 	// The API returns at most a handful of journeys per request, so follow `laterRef` for more.
 	const raw: { legs: Leg[] }[] = [];
@@ -53,7 +69,7 @@ export async function getJourneys(from: string, to: string, fetch = globalThis.f
 		if (!laterThan) break;
 	}
 
-	const journeys: Journey[] = raw.map((journey) => {
+	return raw.map((journey): Journey => {
 		const rides = journey.legs.filter((leg) => !leg.walking);
 		const first = rides[0];
 		const last = rides[rides.length - 1];
@@ -72,7 +88,4 @@ export async function getJourneys(from: string, to: string, fetch = globalThis.f
 			}))
 		};
 	});
-
-	cache.set(key, { journeys, fetchedAt: Date.now() });
-	return journeys;
 }

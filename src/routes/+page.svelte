@@ -102,7 +102,7 @@
 		if (!now) return;
 		for (const [id, stored] of alarms) {
 			// Follow delays: prefer the refreshed journey over the one the alarm was set on.
-			const journey = data.journeys?.find((j) => j.id === id) ?? stored;
+			const journey = data.journeys?.journeys.find((j) => j.id === id) ?? stored;
 			if (now.getTime() < new Date(journey.departure).getTime() - ALARM_LEAD * 60_000) continue;
 			alarms.delete(id);
 			const lines = journey.lines.map((line) => line.name).join(' › ');
@@ -190,7 +190,8 @@
 		<Connections
 			from="Golm"
 			to="Griebnitzsee"
-			journeys={data.journeys}
+			journeys={data.journeys?.journeys ?? null}
+			fetchedAt={data.journeys?.fetchedAt}
 			{now}
 			{alarms}
 			ontoggle={toggleAlarm}

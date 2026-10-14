@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Bell } from '@lucide/svelte';
+	import { Bell, TriangleAlert } from '@lucide/svelte';
 	import NumberFlow from '@number-flow/svelte';
 	import { flip } from 'svelte/animate';
 	import { fade, scale } from 'svelte/transition';
@@ -9,6 +9,8 @@
 		from: string;
 		to: string;
 		journeys: Journey[] | null;
+		/** When `journeys` was fetched; VBB is down if this is old, so we're showing a cached result. */
+		fetchedAt?: number;
 		now?: Date;
 		/** Journeys with an alarm set, keyed by id. */
 		alarms: ReadonlyMap<string, Journey>;
@@ -17,7 +19,9 @@
 		alarmLead: number;
 	};
 
-	let { from, to, journeys, now, alarms, ontoggle, alarmLead }: Props = $props();
+	let { from, to, journeys, fetchedAt, now, alarms, ontoggle, alarmLead }: Props = $props();
+
+	const STALE_AFTER = 5 * 60_000;
 
 	const timeFormat = new Intl.DateTimeFormat('de-DE', {
 		hour: '2-digit',
@@ -29,6 +33,12 @@
 		(journeys ?? []).filter((journey) => !now || new Date(journey.departure) >= now).slice(0, 8)
 	);
 
+	const staleMinutes = $derived(
+		now && fetchedAt && now.getTime() - fetchedAt > STALE_AFTER
+			? Math.floor((now.getTime() - fetchedAt) / 60_000)
+			: null
+	);
+
 	function minutesUntil(departure: string, now: Date) {
 		return Math.round((new Date(departure).getTime() - now.getTime()) / 60_000);
 	}
@@ -37,9 +47,16 @@
 <section class="panel">
 	<header class="panel-title mb-3! flex items-baseline justify-between gap-4">
 		<h2>{from} → {to}</h2>
-		<p class="truncate text-xs text-white/35">
-			Antippen für Wecker · {alarmLead} min Fußweg eingeplant
-		</p>
+		{#if staleMinutes !== null}
+			<p class="flex items-center gap-1.5 truncate text-xs text-amber-200/80">
+				<TriangleAlert size={12} strokeWidth={2} class="shrink-0" />
+				VBB nicht erreichbar · Stand vor {staleMinutes} min
+			</p>
+		{:else}
+			<p class="truncate text-xs text-white/35">
+				Antippen für Wecker · {alarmLead} min Fußweg eingeplant
+			</p>
+		{/if}
 	</header>
 
 	{#if !journeys}
